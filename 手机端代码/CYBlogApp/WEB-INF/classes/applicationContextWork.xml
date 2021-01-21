@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
+    <!--  开启注解  -->
+    <context:annotation-config/>
+    <!--配置自定扫描的包-->
+    <context:component-scan base-package="Pojo"></context:component-scan>
+    <context:component-scan base-package="BlogPojo"></context:component-scan>
+    <context:component-scan base-package="ImgPojo"></context:component-scan>
+    <context:component-scan base-package="CommentPojo"></context:component-scan>
+    <context:component-scan base-package="ReplyPojo"></context:component-scan>
+    <context:component-scan base-package="CategoryPojo"></context:component-scan>
+    <context:component-scan base-package="FollowPojo"></context:component-scan>
+    <!--导入资源文件-->
+    <context:property-placeholder location="classpath:user.properties"></context:property-placeholder>
+
+    <!-- 打开AOP的注解 -->
+    <!-- 这里用的是中间的横线而不是下划线 -->
+    <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+    <!--配置C3P0数据源-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="user" value="${jdbc.user}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+        <property name="driverClass" value="${jdbc.driverClass}"></property>
+        <property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+
+        <property name="minPoolSize" value="10"></property>
+        <!--初始化时获取15个连接，取值应在minPoolSize与maxPoolSize之间。Default: 3 -->
+        <property name="initialPoolSize" value="15"></property>
+        <!--连接池中保留的最大连接数。Default: 15 -->
+        <property name="maxPoolSize" value="30"></property>
+        <!--当连接池用完时客户端调用getConnection()后等待获取新连接的时间，超时后将抛出
+        SQLException,如设为0则无限期等待。单位毫秒。Default: 0 -->
+        <property name="checkoutTimeout" value="3000"></property>
+        <!-- 符合JDBC标准、用于控制 PreparedStatements 数量的参数，数据源中单个连接缓存的 PreparedStatements 数量，
+        与 maxStatementsPerConnection（非标准） 参数有点像 -->
+        <property name="maxStatements" value="100"></property>
+        <!--最大空闲时间，指定秒内未使用则连接被丢弃。若为0则永不丢弃。Default: 0 -->
+        <property name="maxIdleTime" value="1800"></property>
+        <!--每1200秒检查所有连接池中的空闲连接。Default: 0 -->
+        <property name="idleConnectionTestPeriod" value="1200"></property>
+    </bean>
+
+    <!--配置Spring的JdbcTemplate-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <!--   调用者本身不能直接通过new的方式创建 .
+    例如B是A中通过@Autowired注入的成员属性 ,
+    当A是通过手动new的方式创建对象时 , B的注入会失效 .  -->
+
+    <!--配置视图解析器，如何把handler方法返回值解析为实际的物理视图-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"/>
+        <property name="suffix" value=".*"/>
+    </bean>
+    <!-- 启动Springmvc注解驱动 -->
+    <mvc:annotation-driven/>
+    <!-- 返回json 方法一 需要导入 fastjson.jar包 -->
+    <mvc:annotation-driven>
+        <mvc:message-converters register-defaults="false">
+            <!-- 避免IE执行AJAX时,返回JSON出现下载文件 -->
+            <bean id="fastJsonHttpMessageConverter" class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <!-- 这里顺序不能反，一定先写text/html,不然ie下出现下载提示 -->
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json;charset=UTF-8</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+<!--    &lt;!&ndash; 文件上传解析器 &ndash;&gt;-->
+<!--    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">-->
+<!--        <property name="defaultEncoding" value="utf-8"></property>-->
+<!--        <property name="maxUploadSize" value="10485760000"></property>&lt;!&ndash; 最大上传文件大小 &ndash;&gt;-->
+<!--        <property name="maxInMemorySize" value="10960"></property>-->
+<!--    </bean>-->
+</beans>
